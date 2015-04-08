@@ -1,0 +1,13 @@
+import(pomp)
+useDynLib(is2,
+          systematic_resampling,
+          pfilter2_computations
+        )
+exportClasses(pomp,
+              pfilterd2.pomp,
+              is2
+            )
+exportMethods(plot,logLik,pfilter2,
+              particles,is2,continue
+            )
+export()

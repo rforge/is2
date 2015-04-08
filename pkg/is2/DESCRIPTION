@@ -1,0 +1,25 @@
+Package: is2
+Type: Package
+Title: Iterated smoothing for partially observed Markov processes
+Version: 0.10-1
+Date: 2015-04-03
+Authors@R: c(person(given=c("Dao"),family="Nguyen", role=c("aut","cre"), email="nguyenxd@umich.edu"),
+	  person(given=c("Edward","L."),family="Ionides",role=c("aut"))
+	  )
+URL: http://is2.r-forge.r-project.org
+Description: Inference methods using iterated smoothing for partially-observed Markov processes
+Depends: R(>= 3.0.0), pomp
+Imports: stats, graphics, mvtnorm, deSolve, coda
+License: GPL(>= 2)
+LazyData: true
+Collate: generics.R 
+         pfilter2.R pfilter2-methods.R
+        is2.R is2-methods.R 
+Author: Dao Nguyen [aut, cre], Edward L. Ionides [aut]
+Maintainer: Dao Nguyen <nguyenxd@umich.edu>
+Repository: R-Forge
+Repository/R-Forge/Project: is2
+Repository/R-Forge/Revision: 1.0
+Repository/R-Forge/DateTimeStamp: 2015-04-04 19:23:13
+Date/Publication: 2015-04-04 19:23:13
+Packaged: 2015-04-04 15:55:11 UTC; root
