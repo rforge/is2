@@ -71,16 +71,16 @@ statistical inference for<br>
 $nav = $_REQUEST["nav"];
 switch ($nav) {
     case "news":
-        $dfile = "content/NEWS.html";
+        $dfile = "NEWS.html";
         break;
     case "bib":
-        $dfile = "content/refs.htm";
+        $dfile = "refs.htm";
         break;
     case "authors":
-        $dfile = "content/authors.htm";
+        $dfile = "authors.htm";
         break;
     default:
-        $dfile = "content/about.htm";
+        $dfile = "about.htm";
         break;
 }
 include($dfile);
