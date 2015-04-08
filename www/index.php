@@ -48,7 +48,7 @@ statistical inference for<br>
 </td>
 <td align="left" width="40%">
 <ul>
-<li><a href="./index.php?nav=about">About <i>pomp</i></a></li>
+<li><a href="./index.php?nav=about">About <i>is2</i></a></li>
 <li><a href="<?php echo $rforgepkgs;?>">Development Version (Rev. <?php print $svnrevision; ?>)</a></li>
 <li><a href="http://lists.r-forge.r-project.org/pipermail/is2-announce/"><i>is2-announce</i> mailing list archives</a></li>
 <li><a href="./index.php?nav=news">Package NEWS</a></li>
