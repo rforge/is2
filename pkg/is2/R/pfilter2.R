@@ -279,8 +279,6 @@ pfilter2.internal <- function (object, params, Np,
   ##########################################
   if ((lag<0)||(lag>ntimes))
     stop("Lag, ",sQuote("lag"),", must greater than 0 and less than ntimes",call.=FALSE)
-  aparticles <- vector(mode="list",length=ntimes)
-  wparticles <- vector(mode="list",length=ntimes)
   
   
   npars<- length(paramnames)
@@ -291,12 +289,11 @@ pfilter2.internal <- function (object, params, Np,
     0,
     dim=c(npars,npars)
   )
-  pcovhats <- array(
-    0,
-    dim=c(npars,npars,lag, ntimes)
-  )
-  
-  
+  if(lag>0 && corr){
+	  aparticles <- vector(mode="list",length=ntimes)
+      wparticles <- vector(mode="list",length=ntimes)
+  }
+  pcovhats=array(data=numeric(0),dim=c(0,0,0,0))
   ##########################################
   
 
@@ -412,6 +409,7 @@ pfilter2.internal <- function (object, params, Np,
         stop(sQuote("pfilter2")," error: too many filtering failures",call.=FALSE)
     }
     
+  
     if (save.states) {
       xparticles[[nt]] <- x
     }
@@ -426,27 +424,38 @@ pfilter2.internal <- function (object, params, Np,
     ##########################################
     if (lag>0)
     {
-      xparticles[[nt]] <- x
-      pparticles[[nt]] <- xx$params
-      wparticles[[nt]] <-xx$weight
-      if(nt==1)
-        aparticles[[1]] <- 0   
-      if (nt<ntimes)
-        aparticles[[nt+1]] <- xx$pa+1  #offset 1 from C
+	  
+      if(nt==1){
+        preparticles<-xx$params
+		preindex <- xx$pa+1  
+	  }
       if(nt>1 && nt<=ntimes){
-        pparticles[[nt-lag]][!is.finite(pparticles[[nt-lag]])] <- 0 
-        C<-cov.wt(t(pparticles[[nt-1]][,]),wt=wparticles[[nt]])
+        preparticles[!is.finite(preparticles)] <- 0 
+        C<-cov.wt(t(preparticles[,preindex]),wt=xx$weight)
         phats<-phats+C$center
         covhats<-covhats+C$cov/(Np[1]-1)
+	    preparticles<-xx$params
+	    preindex <- xx$pa+1
        }
       if(nt==ntimes){
-        pparticles[[nt]][!is.finite(pparticles[[nt]])] <- 0 
-        C<-cov.wt(t(pparticles[[ntimes]]),wt=wparticles[[ntimes]])
+        xx$params[!is.finite(xx$params)] <- 0 
+        C<-cov.wt(t(xx$params),wt=xx$weight)
         phats<-phats+C$center
         covhats<-covhats+C$cov/(Np[1]-1)
       }
       
     }
+	if(lag>0 && corr){
+	  if(nt==1){
+        aparticles[[1]] <- 0
+		
+	  }
+      if (nt<ntimes)
+        aparticles[[nt+1]] <- xx$pa+1  #offset 1 from C
+	  xparticles[[nt]] <- x
+      pparticles[[nt]] <- xx$params
+      wparticles[[nt]] <-xx$weight
+	}
     
     
   }
@@ -454,6 +463,11 @@ pfilter2.internal <- function (object, params, Np,
   # fixed lag smoothing
   ###################################################################
   if(lag>0 && corr){
+	pcovhats <- array(
+    0,
+    dim=c(npars,npars,lag, ntimes)
+    )
+    
     Np<-Np[1]
     #     pcovhat<-matrix(0,npars,lag) #covariance
     results<-lapply(1:ntimes,smoothing,aparticles=aparticles,xparticles=xparticles,pparticles=pparticles,wparticles=wparticles,
