@@ -111,13 +111,14 @@ smoothing<-function(aparticles, xparticles, pparticles, wparticles, nt, ntimes, 
 
 pfilter2.internal <- function (object, params, Np, tol, max.fail,
                                             pred.mean, pred.var, filter.mean,
-                                            cooling, cooling.m, .wn=FALSE,.corr=FALSE,
+                                            cooling, cooling.m, .is2 = FALSE, .wn=FALSE,.corr=FALSE,
                                             .rw.sd, seed, verbose,
                                             save.states, save.params,lag,
                                             .transform, .getnativesymbolinfo = TRUE){
     
     ptsi.inv <- ptsi.for <- gnsi.rproc <- gnsi.dmeas <- as.logical(.getnativesymbolinfo)
-    corr <- as.logical(.corr)
+		is2 <- as.logical(.is2)    
+		corr <- as.logical(.corr)
     wn <- as.logical(.wn)
     transform <- as.logical(.transform)
     
@@ -294,7 +295,13 @@ pfilter2.internal <- function (object, params, Np, tol, max.fail,
 
     for (nt in seq_len(ntimes)) {
     
-        sigma1 <- sigma
+    		if (is2) {	  
+      		cool.sched <- cooling(nt=nt,m=cooling.m)
+      		sigma1 <- sigma*cool.sched$alpha
+    		} 
+				else {
+      		sigma1 <- sigma
+    		}
         
         ## transform the parameters if necessary
         if (transform) tparams <- partrans(object,params,dir="forward", .getnativesymbolinfo=ptsi.for)
