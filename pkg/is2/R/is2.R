@@ -309,6 +309,7 @@ is2.internal <- function (
     
     have.parmat <- !(is.null(paramMatrix) || length(paramMatrix)==0)
     newtheta<-theta
+    
     for (n in seq_len(Nis)){ ## iterate the smoothing
         
         ## get the intensity of artificial noise from the cooling schedule
@@ -341,7 +342,7 @@ is2.internal <- function (
                 filter.mean=TRUE,
                 cooling=cooling,
                 cooling.m=.ndone+n,
-				.is2=(method=="is2"||method=="is3"),
+		.mif2=(method=="is2"||method=="is3"),
                 .corr=(method=="is1"),
                 .wn =(method=="ris1")||(method=="is1"),
                 .rw.sd=sigma.n[pars],
@@ -363,6 +364,7 @@ is2.internal <- function (
         switch(
             method,
             is2={
+		if(n<Nis){
                 paramMatrix <- pfp@paramMatrix
                 oldtheta1<-theta
                 oldtheta<-theta
@@ -385,8 +387,12 @@ is2.internal <- function (
                     v1 <- cool.sched$gamma*rwsdMat[c(pars,ivps)]^2  
                     newtheta[c(pars,ivps)]<- solve(Hessian[c(pars,ivps),c(pars,ivps)])%*%newtheta[c(pars,ivps)]*v1  
                     theta[c(pars,ivps)]  <-  oldtheta1[c(pars,ivps)]-newtheta[c(pars,ivps)]
-
                 }
+		}
+		else{
+		    paramMatrix <- pfp@paramMatrix
+             	    theta[pars] <- rowMeans(paramMatrix[pars,,drop=FALSE])
+		}
             },
             is3={
                 if (lag>0){
@@ -408,7 +414,8 @@ is2.internal <- function (
                 if (lag>0){
                     phat<-pfp@phats
                     names(phat)<-names(theta)
-                    Hessian[c(pars,ivps),c(pars,ivps)]<--ntimes*diag(sigma.n[c(pars,ivps)]^2)
+		    covhat<-pfp@covhats
+                    Hessian[c(pars,ivps),c(pars,ivps)]<-covhat[c(pars,ivps),c(pars,ivps)]-ntimes*diag(sigma.n[c(pars,ivps)]^2)
                     newtheta[c(pars,ivps)] <- phat[c(pars,ivps)]-ntimes*oldtheta[c(pars,ivps)]  
                     v1 <- cool.sched$gamma*rwsdMat[c(pars,ivps)]^2  
                     newtheta[c(pars,ivps)]<- solve(Hessian[c(pars,ivps),c(pars,ivps)])%*%newtheta[c(pars,ivps)]*v1  
@@ -453,8 +460,7 @@ is2.internal <- function (
             },
             stop("unrecognized method ",sQuote(method))
         )
-        if(method!='is2')        
-            theta[ivps] <- pfp@filter.mean[ivps,ntimes]
+        theta[ivps] <- pfp@filter.mean[ivps,ic.lag]
         conv.rec[n+1,-c(1,2)] <- theta
         conv.rec[n,c(1,2)] <- c(pfp@loglik,pfp@nfail)
         
@@ -718,4 +724,3 @@ is2.profileDesign <- function (object, profile, lower, upper, nprof, ivps,
     
     ans
 }
-

@@ -12,14 +12,14 @@ Depends: R(>= 3.0.0), pomp
 Imports: stats, graphics, mvtnorm, deSolve, coda
 License: GPL(>= 2)
 LazyData: true
-Collate: generics.R 
-         pfilter2.R pfilter2-methods.R
-        is2.R is2-methods.R 
-Author: Dao Nguyen [aut, cre], Edward L. Ionides [aut]
+Collate: generics.R pfilter2.R pfilter2-methods.R is2.R is2-methods.R
+Authors: Dao Nguyen [aut, cre], Edward L. Ionides [aut]
 Maintainer: Dao Nguyen <nguyenxd@umich.edu>
 Repository: R-Forge
 Repository/R-Forge/Project: is2
-Repository/R-Forge/Revision: 1.0
+Repository/R-Forge/Revision: 1
 Repository/R-Forge/DateTimeStamp: 2015-04-04 19:23:13
 Date/Publication: 2015-04-04 19:23:13
-Packaged: 2015-04-04 15:55:11 UTC; root
+Packaged: 2015-08-02 21:45:05 UTC; dao
+Author: Dao Nguyen [aut, cre],
+  Edward L. Ionides [aut]

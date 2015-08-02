@@ -111,15 +111,16 @@ smoothing<-function(aparticles, xparticles, pparticles, wparticles, nt, ntimes, 
 
 pfilter2.internal <- function (object, params, Np, tol, max.fail,
                                             pred.mean, pred.var, filter.mean,
-                                            cooling, cooling.m, .is2 = FALSE, .wn=FALSE,.corr=FALSE,
+                                            cooling, cooling.m, .mif2 = FALSE, .wn=FALSE,.corr=FALSE,
                                             .rw.sd, seed, verbose,
                                             save.states, save.params,lag,
                                             .transform, .getnativesymbolinfo = TRUE){
     
     ptsi.inv <- ptsi.for <- gnsi.rproc <- gnsi.dmeas <- as.logical(.getnativesymbolinfo)
-		is2 <- as.logical(.is2)    
-		corr <- as.logical(.corr)
+    mif2 <- as.logical(.mif2)
+    corr <- as.logical(.corr)
     wn <- as.logical(.wn)
+    Sumsigma2 <- 100	#asymptotic sum of sigma square
     transform <- as.logical(.transform)
     
     if (missing(seed)) seed <- NULL
@@ -286,7 +287,7 @@ pfilter2.internal <- function (object, params, Np, tol, max.fail,
     }
     
     if (lag>0 && corr){
-        aparticles <- vector(mode="list",length=ntimes)
+        aparticles <- vector(mode="list",length=ntimes+1)
         wparticles <- vector(mode="list",length=ntimes)
     }
   
@@ -294,14 +295,13 @@ pfilter2.internal <- function (object, params, Np, tol, max.fail,
   
 
     for (nt in seq_len(ntimes)) {
-    
-    		if (is2) {	  
-      		cool.sched <- cooling(nt=nt,m=cooling.m)
-      		sigma1 <- sigma*cool.sched$alpha
-    		} 
-				else {
-      		sigma1 <- sigma
-    		}
+        if (mif2) {	  
+          cool.sched <- cooling(nt=nt,m=cooling.m)
+          sigma1 <- sigma*cool.sched$alpha
+        } 
+        else {
+          sigma1 <- sigma
+        }
         
         ## transform the parameters if necessary
         if (transform) tparams <- partrans(object,params,dir="forward", .getnativesymbolinfo=ptsi.for)
@@ -435,7 +435,7 @@ pfilter2.internal <- function (object, params, Np, tol, max.fail,
                 
                 C<-cov.wt(t(psparticles[[1]][,index]),wt=xx$weight)
                 phats<-phats+C$center
-                covhats<-covhats+C$cov/(Np[1]-1)
+                covhats<-covhats+C$cov/ntimes
 				if (lag>1){                
 					for (i in 1:(lag-1)){
                     	psparticles[[i]]<-psparticles[[i+1]]
@@ -446,27 +446,40 @@ pfilter2.internal <- function (object, params, Np, tol, max.fail,
 				asparticles[[lag+1]]<-xx$pa+1
             }
             if(nt==ntimes){
-				index<-unlist(ancestor(plist=asparticles,t=lag+1, lag=lag, 1:(Np[1])))
+		index<-unlist(ancestor(plist=asparticles,t=lag+1, lag=lag, 1:(Np[1])))
                 psparticles[[1]][!is.finite(psparticles[[1]])] <- 0 
                 C<-cov.wt(t(psparticles[[1]][,index]),wt=xx$weight)
                 phats<-phats+C$center
-                covhats<-covhats+C$cov/(Np[1]-1)
-				if (lag>1){                
-					for (i in 1:(lag-1)){
-                    	psparticles[[i]]<-psparticles[[i+1]]
-						asparticles[[i+1]]<-asparticles[[i+2]]  
+                covhats<-covhats+C$cov/ntimes
+		if (lag>1){                
+			for (i in 1:(lag-1)){
+                    		psparticles[[i]]<-psparticles[[i+1]]
+				asparticles[[i+1]]<-asparticles[[i+2]]  
                 	}
-				}
+		}
                 
             }
         }
         if(lag>0 && corr){
-            pparticles[[nt]] <- xx$params
-            wparticles[[nt]] <-xx$weight
-            if(nt==1)
-                aparticles[[1]] <- 0   
-            if (nt<ntimes)
-                aparticles[[nt+1]] <- xx$pa+1  #offset 1 from C
+            xparticles[[nt]] <- x
+      	    pparticles[[nt]] <- xx$params
+      	    wparticles[[nt]] <-xx$weight
+      	    if(nt==1)
+          	aparticles[[1]] <- 0   
+      	    if (nt<ntimes)
+        	aparticles[[nt+1]] <- xx$pa+1  #offset 1 from C
+      	    if(nt>1 && nt<=ntimes){
+        	pparticles[[nt-lag]][!is.finite(pparticles[[nt-lag]])] <- 0 
+        	C<-cov.wt(t(pparticles[[nt-1]][,]),wt=wparticles[[nt]])
+        	phats<-phats+C$center
+        	covhats<-covhats+C$cov/ntimes
+       	    }
+      	    if(nt==ntimes){
+            	pparticles[[nt]][!is.finite(pparticles[[nt]])] <- 0 
+            	C<-cov.wt(t(pparticles[[ntimes]]),wt=wparticles[[ntimes]])
+            	phats<-phats+C$center
+            	covhats<-covhats+C$cov/ntimes
+      	    }
             
         }
     }
@@ -505,7 +518,7 @@ pfilter2.internal <- function (object, params, Np, tol, max.fail,
         pred.mean=pred.m,
         pred.var=pred.v,
         filter.mean=filt.m,
-        paramMatrix= array(data=numeric(0),dim=c(0,0)),
+        paramMatrix= params,
         eff.sample.size=eff.sample.size,
         cond.loglik=loglik,
         saved.states=xparticles,

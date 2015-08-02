@@ -164,7 +164,7 @@
 \references{
   D. Nguyen, E. L. Ionides, 
   A second-order iterated smoothing,
-  Journal of Statistics Society Series B, 2015 (submitted).
+  Journal of Statistics and Computing, 2015 (submitted).
 
   A., Doucet, P. E. Jacob,  and S. Rubenthaler,
   Derivative-free estimation of the score vector and observed information matrix with application to state-space models, 
