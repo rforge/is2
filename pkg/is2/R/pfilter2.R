@@ -287,8 +287,11 @@ pfilter2.internal <- function (object, params, Np, tol, max.fail,
     }
     
     if (lag>0 && corr){
-        aparticles <- vector(mode="list",length=ntimes+1)
-        wparticles <- vector(mode="list",length=ntimes)
+        asparticles <- vector(mode="list",length=2*lag+1)
+		xsparticles <- vector(mode="list",length=2*lag)        
+		wsparticles <- vector(mode="list",length=2*lag)
+		psparticles <- vector(mode="list",length=2*lag)
+		Cindex <- matrix(0, nrow=lag, ncol = Np[1])
     }
   
     ##########################################
@@ -430,9 +433,24 @@ pfilter2.internal <- function (object, params, Np, tol, max.fail,
                 
             }
             if(nt>lag && nt<=ntimes){
-				index<-unlist(ancestor(plist=asparticles,t=lag+1, lag=lag, 1:(Np[1])))
+		index<-unlist(ancestor(plist=asparticles,t=lag+1, lag=lag, 1:(Np[1])))
                 psparticles[[1]][!is.finite(psparticles[[1]])] <- 0 
                 
+                C<-cov.wt(t(psparticles[[1]][,index]),wt=xx$weight)
+                phats<-phats+C$center
+                covhats<-covhats+C$cov/ntimes
+				if (lag>1){                
+					for (i in 1:(lag-1)){
+                		psparticles[[i]]<-psparticles[[i+1]]
+						asparticles[[i+1]]<-asparticles[[i+2]]  
+              		}
+				}
+            	psparticles[[lag]]<-params
+				asparticles[[lag+1]]<-xx$pa+1
+            }
+            if(nt==ntimes){
+				index<-unlist(ancestor(plist=asparticles,t=lag+1, lag=lag, 1:(Np[1])))
+                psparticles[[1]][!is.finite(psparticles[[1]])] <- 0 
                 C<-cov.wt(t(psparticles[[1]][,index]),wt=xx$weight)
                 phats<-phats+C$center
                 covhats<-covhats+C$cov/ntimes
@@ -442,66 +460,79 @@ pfilter2.internal <- function (object, params, Np, tol, max.fail,
 						asparticles[[i+1]]<-asparticles[[i+2]]  
                 	}
 				}
-                psparticles[[lag]]<-params
-				asparticles[[lag+1]]<-xx$pa+1
-            }
-            if(nt==ntimes){
-		index<-unlist(ancestor(plist=asparticles,t=lag+1, lag=lag, 1:(Np[1])))
-                psparticles[[1]][!is.finite(psparticles[[1]])] <- 0 
-                C<-cov.wt(t(psparticles[[1]][,index]),wt=xx$weight)
-                phats<-phats+C$center
-                covhats<-covhats+C$cov/ntimes
-		if (lag>1){                
-			for (i in 1:(lag-1)){
-                    		psparticles[[i]]<-psparticles[[i+1]]
-				asparticles[[i+1]]<-asparticles[[i+2]]  
-                	}
-		}
                 
             }
         }
         if(lag>0 && corr){
-            xparticles[[nt]] <- x
-      	    pparticles[[nt]] <- xx$params
-      	    wparticles[[nt]] <-xx$weight
-      	    if(nt==1)
-          	aparticles[[1]] <- 0   
-      	    if (nt<ntimes)
-        	aparticles[[nt+1]] <- xx$pa+1  #offset 1 from C
-      	    if(nt>1 && nt<=ntimes){
-        	pparticles[[nt-lag]][!is.finite(pparticles[[nt-lag]])] <- 0 
-        	C<-cov.wt(t(pparticles[[nt-1]][,]),wt=wparticles[[nt]])
-        	phats<-phats+C$center
-        	covhats<-covhats+C$cov/ntimes
-       	    }
-      	    if(nt==ntimes){
-            	pparticles[[nt]][!is.finite(pparticles[[nt]])] <- 0 
-            	C<-cov.wt(t(pparticles[[ntimes]]),wt=wparticles[[ntimes]])
-            	phats<-phats+C$center
-            	covhats<-covhats+C$cov/ntimes
-      	    }
-            
+	    if(nt<(2*lag+1)){
+                psparticles[[nt]] <- params
+		wsparticles[[nt]] <- xx$weight
+                asparticles[[nt+1]] <- xx$pa+1  #offset 1 from C
+                
+            }
+            if(nt>(2*lag) && nt<=ntimes){  
+				index<-unlist(ancestor(plist=asparticles,t=lag+1, lag=lag, 1:(Np[1])))
+				psparticles[[1]][!is.finite(psparticles[[1]])] <- 0
+				C<-cov.wt(t(psparticles[[1]][,index]),wt=wsparticles[[lag+1]])
+				phats<-phats+C$center
+				covhats<-covhats+C$cov/Np[1]
+				if(lag>1){
+					for(i in 2:lag){
+						index1<-unlist(ancestor(plist=asparticles,t=lag+1, lag=lag+1-i, 1:(Np[1])))
+						psparticles[[i]][!is.finite(psparticles[[i]])] <- 0
+						C<-cov.wt(cbind(t(psparticles[[i]][,index1]),t(psparticles[[1]][,index])),wt=wsparticles[[lag+i]])
+						covhats<-covhats+C$cov/Np[1]
+ 					}
+
+				}
+				C<-cov.wt(cbind(t(psparticles[[lag+1]][,1:(Np[1])]),t(psparticles[[1]][,index])),wt=xx$weight)
+				covhats<-covhats+C$cov[1:nrow(params),(nrow(params)+1):(2*nrow(params))]/Np[1]
+				for (i in 1:(2*lag-1)){
+                			psparticles[[i]]<-psparticles[[i+1]]
+					wsparticles[[i]]<-wsparticles[[i+1]]
+					asparticles[[i+1]]<-asparticles[[i+2]]  
+              			}
+				
+            			psparticles[[2*lag]] <- params
+				wsparticles[[2*lag]] <- xx$weight
+                		asparticles[[2*lag+1]] <- xx$pa+1
+			}
+
+			if(nt==ntimes){
+            			for(j in 1:2*lag){
+					index<-unlist(ancestor(plist=asparticles,t=lag+1, lag=lag, 1:(Np[1])))
+					psparticles[[1]][!is.finite(psparticles[[1]])] <- 0
+					C<-cov.wt(t(psparticles[[1]][,index]),wt=wsparticles[[lag+1]])
+					phats<-phats+C$center
+					covhats<-covhats+C$cov/Np[1]
+				
+					if(lag>1){
+						for(i in 2:lag){
+							index1<-unlist(ancestor(plist=asparticles,t=lag+1, lag=lag+1-i, 1:(Np[1])))
+							psparticles[[i]][!is.finite(psparticles[[i]])] <- 0
+							C<-cov.wt(cbind(t(psparticles[[i]][,index1]),t(psparticles[[1]][,index])),wt=wsparticles[[lag+i]])
+							covhats<-covhats+C$cov/Np[1]
+						}
+					}
+					C<-cov.wt(cbind(t(psparticles[[lag+1]][,1:(Np[1])]),t(psparticles[[1]][,index])),wt=xx$weight)
+					covhats<-covhats+C$cov[1:nrow(params),(nrow(params)+1):(2*nrow(params))]/Np[1]
+				
+				
+					for (i in 1:(2*lag-1)){
+                				psparticles[[i]]<-psparticles[[i+1]]
+						wsparticles[[i]]<-wsparticles[[i+1]]
+						asparticles[[i+1]]<-asparticles[[i+2]]  
+              				}
+				
+            				psparticles[[2*lag]] <- params
+					wsparticles[[2*lag]] <- xx$weight
+                			asparticles[[2*lag+1]] <- xx$pa+1
+				}
+      	    		}
+            	
         }
     }
-    ###################################################################
-    # fixed lag smoothing
-    ###################################################################
-    if(lag>0 && corr){
-        pcovhats <- array(
-            0,
-            dim=c(npars,npars,lag, ntimes)
-        )
-      
-        Np<-Np[1]
-        #pcovhat<-matrix(0,npars,lag) #covariance
-        results<-lapply(1:ntimes,smoothing,aparticles=aparticles,xparticles=xparticles,pparticles=pparticles,wparticles=wparticles,
-                                ntimes=ntimes,lag=lag, nvars=nvars, npars=npars, sigma,Np=Np)
-        for(i in 1:ntimes){
-            pcovhats[,,,i]=results[[i]]
-        }
-        # Clean up
-        gc()
-    }
+    
     if (!is.null(seed)){
         assign(".Random.seed",save.seed,pos=.GlobalEnv)
         seed <- save.seed

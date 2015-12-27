@@ -414,7 +414,7 @@ is2.internal <- function (
                 if (lag>0){
                     phat<-pfp@phats
                     names(phat)<-names(theta)
-		    covhat<-pfp@covhats
+		    						covhat<-pfp@covhats
                     Hessian[c(pars,ivps),c(pars,ivps)]<-covhat[c(pars,ivps),c(pars,ivps)]-ntimes*diag(sigma.n[c(pars,ivps)]^2)
                     newtheta[c(pars,ivps)] <- phat[c(pars,ivps)]-ntimes*oldtheta[c(pars,ivps)]  
                     v1 <- cool.sched$gamma*rwsdMat[c(pars,ivps)]^2  
@@ -435,24 +435,11 @@ is2.internal <- function (
                 colnames(Hessian)<-names(theta)
                 rownames(Hessian)<-names(theta)
                 if (lag>0){
-                    
                     phat<-pfp@phats
                     names(phat)<-names(theta)
-                    covhat<-pfp@covhats
-                    colnames(covhat)<-names(theta)
-                    rownames(covhat)<-names(theta)
+		    						covhat<-pfp@covhats
                     Hessian[c(pars,ivps),c(pars,ivps)]<-covhat[c(pars,ivps),c(pars,ivps)]-ntimes*diag(sigma.n[c(pars,ivps)]^2)
                     newtheta[c(pars,ivps)] <- phat[c(pars,ivps)]-ntimes*oldtheta[c(pars,ivps)]  
-                    for(i in 1:ntimes){
-                        for(j in 1:lag){
-                            covhat<-pfp@pcovhats[,,j,i]
-                            colnames(covhat)<-names(theta)
-                            rownames(covhat)<-names(theta)
-                            Hessian[c(pars,ivps),c(pars,ivps)]<-Hessian[c(pars,ivps),c(pars,ivps)]+2*covhat[c(pars,ivps),c(pars,ivps)]
-                            
-                        }
-                    }
-                    Hessian[c(pars,ivps),c(pars,ivps)]<-0.5*(Hessian[c(pars,ivps),c(pars,ivps)]+t(Hessian[c(pars,ivps),c(pars,ivps)]))
                     v1 <- cool.sched$gamma*rwsdMat[c(pars,ivps)]^2  
                     newtheta[c(pars,ivps)]<- solve(Hessian[c(pars,ivps),c(pars,ivps)])%*%newtheta[c(pars,ivps)]*v1  
                     theta[c(pars,ivps)]  <-  oldtheta1[c(pars,ivps)]-newtheta[c(pars,ivps)]
